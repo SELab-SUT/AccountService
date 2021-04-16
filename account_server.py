@@ -55,8 +55,11 @@ def create_user():
 		get_db().commit()
 		return {'message': 'Success'}, HTTPStatus.CREATED	
 	
-	except sqlite3.IntegrityError:
-		return {'message': 'Error: UNIQUE constrained failed'}, HTTPStatus.CONFLICT
+	except sqlite3.IntegrityError as e:
+		if 'UNIQUE' in str(e):
+			return {'message': 'Error: username already exists'}, HTTPStatus.CONFLICT
+		else:
+			return {'message': 'Error: missing or bad fields'}, HTTPStatus.BAD_REQUEST
 
 
 @app.route('/get_user/<username>')
@@ -76,21 +79,25 @@ def modify_user(username):
 	data = request.json
 	cur = get_db().cursor()
 	val_list = []
-	for col in data:
-		if col == 'isAdmin':
-			val_list.append(f'{col} = {data[col]}')
+	try:
+		for col in data:
+			if col == 'isAdmin':
+				val_list.append(f'{col} = {data[col]}')
+			else:
+				val_list.append(f"{col} = '{data[col]}'")
+
+		command = 'UPDATE users SET ' + ','.join(val for val in val_list) + \
+					' WHERE username = ?'
+		cur.execute(command, (username,))
+		get_db().commit()
+
+		if cur.rowcount == 0:
+			return {'message': 'Error: No user found'}, HTTPStatus.NOT_FOUND
 		else:
-			val_list.append(f"{col} = '{data[col]}'")
+			return {'message': 'Success'}, HTTPStatus.OK
 
-	command = 'UPDATE users SET ' + ','.join(val for val in val_list) + \
-				' WHERE username = ?'
-	cur.execute(command, (username,))
-	get_db().commit()
-
-	if cur.rowcount == 0:
-		return {'message': 'Error: No user found'}, HTTPStatus.NOT_FOUND
-	else:
-		return {'message': 'Success'}, HTTPStatus.OK
+	except sqlite3.IntegrityError:
+		return {'message': 'Bad fields'}, HTTPStatus.BAD_REQUEST
 
 
 @app.teardown_appcontext
