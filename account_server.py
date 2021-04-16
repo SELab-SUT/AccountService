@@ -69,9 +69,33 @@ def get_user():
 	row = cur.fetchone()
 
 	if row is None:
-		return {'message': 'Error: No user Found'}
+		return {'message': 'Error: No user found'}
 	else:
 		return {'message': 'Success', 'user': row}
+
+
+@app.route('/modify_user', methods=['POST'])
+def modify_user():
+	data = request.json
+	cur = get_db().cursor()
+	val_list = []
+	for col in data:
+		if col == 'username':
+			continue
+		if col == 'isAdmin':
+			val_list.append(f'{col} = {data[col]}')
+		else:
+			val_list.append(f"{col} = '{data[col]}'")
+
+	command = 'UPDATE users SET ' + ','.join(val for val in val_list) + \
+				' WHERE username = ?'
+	cur.execute(command, (data['username'],))
+	get_db().commit()
+
+	if cur.rowcount == 0:
+		return {'message': 'Error: No user found'}
+	else:
+		return {'message': 'Success'}
 
 
 @app.teardown_appcontext
