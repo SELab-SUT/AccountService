@@ -2,6 +2,7 @@ import sqlite3
 import os
 from flask import Flask, request, g
 from flask.json import jsonify
+from http import HTTPStatus
 from werkzeug.security import generate_password_hash
 
 app = Flask(__name__)
@@ -43,45 +44,39 @@ def setup_db():
 @app.route('/create_user', methods=['POST'])
 def create_user():
 	data = request.json
-	data['email'] = data['email'] if 'email' in data else None
-	data['phone'] = data['phone'] if 'phone' in data else None
 	cur = get_db().cursor()
 
 	try:
-		cur.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?)', (data['username'],
-															data['hashed_passwd'],
-															data['email'],
-															data['phone'],
-															data['isAdmin']))
+		cur.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?)', (data.get('username'),
+															data.get('hashed_passwd'),
+															data.get('email'),
+															data.get('phone'),
+															data.get('isAdmin')))
 		get_db().commit()
-		return {'message': 'Success'}
+		return {'message': 'Success'}, HTTPStatus.CREATED	
 	
 	except sqlite3.IntegrityError:
-		return {'message': 'Error: UNIQUE constrained failed'}
+		return {'message': 'Error: UNIQUE constrained failed'}, HTTPStatus.CONFLICT
 
 
-@app.route('/get_user')
-def get_user():
-	data = request.json
+@app.route('/get_user/<username>')
+def get_user(username):
 	cur = get_db().cursor()
-
-	cur.execute('SELECT * FROM users WHERE username = ?', (data['username'],))
+	cur.execute('SELECT * FROM users WHERE username = ?', (username,))
 	row = cur.fetchone()
 
 	if row is None:
-		return {'message': 'Error: No user found'}
-	else:
-		return {'message': 'Success', 'user': row}
+		return {'message': 'Error: No user found'}, HTTPStatus.NOT_FOUND
+	else:	
+		return {'message': 'Success', 'user': row}, HTTPStatus.OK
 
 
-@app.route('/modify_user', methods=['POST'])
-def modify_user():
+@app.route('/modify_user/<username>', methods=['PUT'])
+def modify_user(username):
 	data = request.json
 	cur = get_db().cursor()
 	val_list = []
 	for col in data:
-		if col == 'username':
-			continue
 		if col == 'isAdmin':
 			val_list.append(f'{col} = {data[col]}')
 		else:
@@ -89,13 +84,13 @@ def modify_user():
 
 	command = 'UPDATE users SET ' + ','.join(val for val in val_list) + \
 				' WHERE username = ?'
-	cur.execute(command, (data['username'],))
+	cur.execute(command, (username,))
 	get_db().commit()
 
 	if cur.rowcount == 0:
-		return {'message': 'Error: No user found'}
+		return {'message': 'Error: No user found'}, HTTPStatus.NOT_FOUND
 	else:
-		return {'message': 'Success'}
+		return {'message': 'Success'}, HTTPStatus.OK
 
 
 @app.teardown_appcontext
