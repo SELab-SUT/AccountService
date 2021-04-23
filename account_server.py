@@ -74,9 +74,9 @@ def modify_user(username):
 		return {'message': 'Bad fields'}, HTTPStatus.BAD_REQUEST
 
 
-@app.route('/all_users', methods=['GET'])
+@app.route('/show_clients', methods=['GET'])
 def all_users():
-	return jsonify([u.to_dict() for u in User.query.all()])
+	return jsonify([u.to_dict() for u in User.query.filter_by(isAdmin=0).all()])
 
 
 if __name__=='__main__':
