@@ -11,4 +11,4 @@ class User(db.Model):
 
 	def to_dict(self):
 		vals = vars(self)
-		return {attr: str(vals[attr]) for attr in vals if 'instance_state' not in attr}
+		return {attr: vals[attr] for attr in vals if 'instance_state' not in attr}
