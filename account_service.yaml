@@ -30,17 +30,17 @@ paths:
         "201":
           description: "Created"
           schema:
-            type: "object"
+            type: object
             properties:
               message:
-                type: "string"
+                type: string
         "409":
           description: "User already exists"
           schema:
-            type: "object"
+            type: object
             properties:
               message:
-                type: "string"
+                type: string
   /get_user/{username}:
     get:
       tags:
@@ -57,19 +57,19 @@ paths:
         "200":
           description: "Ok"
           schema:
-            type: "object"
+            type: object
             properties:
               message:
-                type: "string"
+                type: string
               user:
                 $ref: "#/definitions/User"
         "404":
           description: "User not found"
           schema:
-            type: "object"
+            type: object
             properties:
               message:
-                type: "string"
+                type: string
   /modify_user/{username}:
     put:
       tags:
@@ -88,46 +88,69 @@ paths:
         name: "body"
         required: True
         schema:
-          $ref: "#/definitions/User"
+          type: object
+          properties:
+            hashed_passwd:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
+            isAdmin:
+              type: boolean
       responses:
         "200":
           description: "Successful update"
           schema:
-            type: "object"
+            type: object
             properties:
               message:
-                type: "string"
+                type: string
         "400":
           description: "Bad request"
           schema:
-            type: "object"
+            type: object
             properties:
               message:
-                type: "string"
+                type: string
         "404":
           description: "User not found"
           schema:
-            type: "object"
+            type: object
             properties:
               message:
-                type: "string"
+                type: string
+  /show_clients:
+    get:
+      tags:
+      - "user"
+      summary: "Show all clients"
+      produces:
+      - "application/json"
+      responses:
+        "200":
+          description: "Ok"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/User"
 definitions:
   User:
-    type: "object"
+    type: object
     required:
       - username
       - hashed_passwd
       - isAdmin
     properties:
       username:
-        type: "string"
+        type: string
       hashed_passwd:
-        type: "string"
+        type: string
       email:
-        type: "string"
+        type: string
       phone:
-        type: "string"
+        type: string
       isAdmin:
-        type: "boolean"
+        type: boolean
     xml:
       name: "User"
